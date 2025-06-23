@@ -1,5 +1,8 @@
 import requests
 from urllib.parse import urlparse
+import logging
+
+logger = logging.getLogger("mcp_server")
 
 """
 Telegraph content extractor tool for MCP server.
@@ -17,28 +20,33 @@ def extract_telegraph_content(url: str) -> dict:
     Raises:
         Exception: If the page cannot be fetched or parsed.
     """
+    logger.info(f"Starting extraction for url: {url}")
     parsed_url = urlparse(url)
     path = parsed_url.path.lstrip('/')  # Remove leading slash
 
     if not path:
+        logger.error("Invalid Telegraph URL: Missing path component.")
         raise ValueError("Invalid Telegraph URL: Missing path component.")
 
     api_url = f"https://api.telegra.ph/getPage/{path}?return_content=true"
+    logger.debug(f"Telegraph API URL: {api_url}")
 
     try:
         response = requests.get(api_url)
         response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
     except requests.exceptions.RequestException as e:
-        # More specific error handling could be added here (e.g., for 404)
+        logger.error(f"Error fetching Telegraph page: {e}")
         raise Exception(f"Error fetching Telegraph page: {e}")
 
     try:
         data = response.json()
     except ValueError:
+        logger.error("Error parsing JSON response from Telegraph API.")
         raise Exception("Error parsing JSON response from Telegraph API.")
 
     if not data.get("ok"):
         error_message = data.get("error", "Unknown error from Telegraph API")
+        logger.error(f"Telegraph API error: {error_message}")
         raise Exception(f"Telegraph API error: {error_message}")
 
     content_nodes = data.get("result", {}).get("content", [])
@@ -131,11 +139,13 @@ def extract_telegraph_content(url: str) -> dict:
 
     text_content = process_node_children(content_nodes)
 
-    return {
+    result = {
         "text_content": text_content.strip(),
         "image_urls": image_urls,
         "video_urls": video_urls,
     }
+    logger.debug(f"Extraction result: text length={len(result['text_content'])}, images={len(result['image_urls'])}, videos={len(result['video_urls'])}")
+    return result
 
 if __name__ == '__main__':
     # Example Usage (for testing only)

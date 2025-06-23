@@ -32,3 +32,13 @@ Available tools:
 
 You can request new tools or features as needed. For more information, refer to the project README or contact the server administrator.
 """
+
+# Logging configuration
+LOG_DIR = os.getenv("LOG_DIR", "logs")
+LOG_FILE = os.path.join(LOG_DIR, "server.log")
+
+# Server configuration
+PORT = int(os.getenv("PORT", "8000"))  # Port to run the MCP server on
+USE_HTTPS = os.getenv("USE_HTTPS", "false").lower() == "true"  # Enable HTTPS if true
+SSL_CERTFILE = os.getenv("SSL_CERTFILE", "")  # Path to SSL certificate file
+SSL_KEYFILE = os.getenv("SSL_KEYFILE", "")    # Path to SSL key file
